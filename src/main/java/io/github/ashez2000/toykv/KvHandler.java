@@ -6,11 +6,22 @@ import io.github.ashez2000.toykv.storage.Store;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 
 public class KvHandler implements HttpHandler {
 
+    private final HttpClient http = HttpClient.newHttpClient();
+
     private final Store store = new Store();
+    private final String[] peers;
+
+    public KvHandler(String[] peers) {
+        this.peers = peers;
+    }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -32,6 +43,19 @@ public class KvHandler implements HttpHandler {
                 String key = tokens[1];
                 String value = tokens[2];
                 store.set(key, value);
+
+                for (String peer : peers) {
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(URI.create(peer))
+                            .POST(HttpRequest.BodyPublishers.ofString(body))
+                            .build();
+                    try {
+                        http.send(request, HttpResponse.BodyHandlers.ofString());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
                 response = "OK";
             }
             case "DEL" -> {
