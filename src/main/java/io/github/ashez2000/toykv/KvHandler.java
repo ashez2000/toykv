@@ -30,6 +30,8 @@ public class KvHandler implements HttpHandler {
                 StandardCharsets.UTF_8
         );
 
+        boolean isReplicated = "true".equalsIgnoreCase(exchange.getRequestHeaders().getFirst("X-Replicated"));
+
         String[] tokens = body.split(" ");
         String cmd = tokens[0];
         String response = "";
@@ -44,15 +46,18 @@ public class KvHandler implements HttpHandler {
                 String value = tokens[2];
                 store.set(key, value);
 
-                for (String peer : peers) {
-                    HttpRequest request = HttpRequest.newBuilder()
-                            .uri(URI.create(peer))
-                            .POST(HttpRequest.BodyPublishers.ofString(body))
-                            .build();
-                    try {
-                        http.send(request, HttpResponse.BodyHandlers.ofString());
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                if (!isReplicated) {
+                    for (String peer : peers) {
+                        HttpRequest request = HttpRequest.newBuilder()
+                                .uri(URI.create(peer))
+                                .header("X-Replicated", "true")
+                                .POST(HttpRequest.BodyPublishers.ofString(body))
+                                .build();
+                        try {
+                            http.send(request, HttpResponse.BodyHandlers.ofString());
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
 

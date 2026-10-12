@@ -21,7 +21,7 @@ public class Store {
             return Optional.empty();
         }
 
-        return Optional.of(item.toString());
+        return Optional.of(item.value());
     }
 
     public void set(String key, String value) {
