@@ -2,13 +2,13 @@ package io.github.ashez2000.toykv.storage;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Store {
 
-    private final Map<String, Item> entries = new HashMap<>();
+    private final Map<String, Item> entries = new ConcurrentHashMap<>();
 
     public Optional<String> get(String key) {
         Item item = entries.get(key);
