@@ -66,6 +66,22 @@ public class KvHandler implements HttpHandler {
             case "DEL" -> {
                 String key = tokens[1];
                 boolean ok = store.del(key);
+
+                if (!isReplicated) {
+                    for (String peer : peers) {
+                        HttpRequest request = HttpRequest.newBuilder()
+                                .uri(URI.create(peer))
+                                .header("X-Replicated", "true")
+                                .POST(HttpRequest.BodyPublishers.ofString(body))
+                                .build();
+                        try {
+                            http.send(request, HttpResponse.BodyHandlers.ofString());
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
                 response = ok ? "TRUE" : "FALSE";
             }
             case "PING" -> {
